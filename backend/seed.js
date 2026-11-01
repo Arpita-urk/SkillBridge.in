@@ -1,9 +1,6 @@
 import dns from 'node:dns';
 dns.setServers(['8.8.8.8', '1.1.1.1']);
-// Demo data. Usage:  npm run seed
-//   or:  node seed.js "Your Name" you@email.com yourPassword
-// Fills YOUR account with many skills, incoming/sent requests and alerts, and adds ~30 other
-// students (@demo.skillbridge.dev, password demo1234) teaching skills in every category and level.
+
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -55,7 +52,7 @@ const av = (n) => `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIC
 const ago = (h) => new Date(Date.now() - h * 36e5);
 
 await mongoose.connect(process.env.MONGODB_URI);
-// ---- clean previous demo data (never touches other real users) ----
+
 const demoUsers = await User.find({ email: new RegExp(`${DOMAIN.replace('.', '\\.')}$`) }).select('_id');
 let me = await User.findOne({ email: ME.email });
 const wipe = [...demoUsers.map((u) => u._id), ...(me ? [me._id] : [])];
@@ -72,7 +69,6 @@ const pickLearn = (i) => [0, 1, 2].map((k) => allTopics[(i * 7 + k * 23) % allTo
 const meData = { role: 'admin', name: ME.name, password: hash, bio: 'Student who loves swapping skills. Ask me about React, design or chess!', avatar: av(ME.name), wantToLearn: ['Spanish', 'Guitar', 'Machine learning', 'Photography'] };
 if (me) { Object.assign(me, meData); await me.save(); } else me = await User.create({ email: ME.email, ...meData });
 
-// ---- other students ----
 const users = [];
 for (const [i, name] of NAMES.entries()) users.push(await User.create({ name, email: `${name.split(' ')[0].toLowerCase()}${DOMAIN}`, password: demoHash, bio: BIOS[i % BIOS.length], avatar: av(name), wantToLearn: pickLearn(i), lastLoginAt: ago(Math.floor(Math.random() * 240)), loginCount: 1 + Math.floor(Math.random() * 30), createdAt: ago(24 * (60 - i)) }));
 
@@ -93,7 +89,6 @@ for (const s of created) byUser.get(String(s.owner)).push(s);
 const mySkills = [];
 for (const [i, [title, category, level]] of MINE.entries()) mySkills.push(await Skill.create({ title, category, level, owner: me._id, description: `${levelText[level]} Hands-on and beginner friendly: ${title}.`, createdAt: ago(40 + i * 9) }));
 
-// ---- requests + notifications ----
 let n = 0;
 async function request(sender, wanted, offered, status, hoursAgo, { unread } = {}) {
   const wantedOwner = wanted.owner, k = n++;
